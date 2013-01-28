@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?eclipse version="3.4"?>
+
+<plugin>
+  <extension point="org.knime.workbench.repository.categories">
+     <category
+           description="/community/SeqAn"
+           icon="icons/category.png"
+           level-id="SeqAn"
+           name="SeqAn"
+           path="/community">
+     </category>
+     <category
+           description="Nodes related to the GASiC approach"
+           icon="icons/category.png"
+           level-id="GASiC"
+           name="GASiC"
+           path="/community/SeqAn">
+     </category>
+  </extension>
+  <extension point="org.knime.workbench.repository.nodes">
+  <node category-path="/community/SeqAn/GASiC" factory-class="de.seqan.knime.gasic.GASiCLassoNodeFactory" id="de.seqan.knime.gasic.GASiCLassoNodeFactory"/>
+</extension>
+</plugin>
