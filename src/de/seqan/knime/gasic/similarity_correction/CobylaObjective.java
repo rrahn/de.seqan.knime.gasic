@@ -27,72 +27,65 @@
  */
 package de.seqan.knime.gasic.similarity_correction;
 
-import java.util.Arrays;
-
 import org.ejml.simple.SimpleMatrix;
 
 import com.cureos.numerics.Calcfc;
-import com.cureos.numerics.Cobyla;
 
 /**
- * Computes the corrected abundance matrix for a given similarity matrix and
- * read counts.
+ * Objective funtion for the LassoCorrection optimization using Constrained
+ * optimization by linear approximation.
  * 
  * @author aiche
  */
-public class LassoCorrection {
-
-	// initial value taken from scipy version and GASiC source code
-	private static final double rhobeg = 1.0;
-	private static final double rhoend = 1.0e-10;
-	private static final int iprint = 1;
-	private static final int maxfun = 10000;
-
+public final class CobylaObjective implements Calcfc {
 	/**
-	 * Calculate corrected abundances given a similarity matrix and observations
-	 * using optimization.
-	 * 
-	 * @param similarity
-	 *            Matrix with pairwise similarities between species.
-	 * @param normalizedReadAbundances
-	 *            Vector of read counts per species (normalized).
-	 * @return Estimated abundance of each species in the sample.
+	 * The similarity matrix
 	 */
-	public static double[] similarityCorrection(double[][] similarity,
-			double[] normalizedReadAbundances) {
+	private final SimpleMatrix similarityMatrix;
+	private final SimpleMatrix reads;
 
-		final SimpleMatrix sm = new SimpleMatrix(similarity);
-		final SimpleMatrix reads = new SimpleMatrix(sm.numRows(), 1, true,
-				normalizedReadAbundances);
-
-		// compute total number of reads
-		final int numGenoms = reads.numRows();
-
-		// 1 constraint for each read (non-negative) and total sum <= 1
-		final int numConstraints = numGenoms + 1;
-
-		// normalize reads by its total number
-
-		// solve the lasso problem
-		Calcfc calcfc = new CobylaObjective(sm, reads);
-
-		// initial guess -> 0.5 for all
-		double[] abbundanceValue = new double[numGenoms];
-		double startParameter = 1 / numGenoms;
-		Arrays.fill(abbundanceValue, startParameter);
-
-		// do the actual optimization
-		Cobyla.FindMinimum(calcfc, numGenoms, numConstraints, abbundanceValue,
-				rhobeg, rhoend, iprint, maxfun);
-
-		return abbundanceValue;
+	public CobylaObjective(SimpleMatrix sm, SimpleMatrix reads) {
+		similarityMatrix = sm;
+		this.reads = reads;
 	}
 
-	static double sum(double[] x) {
-		double sum = 0.0;
-		for (double d : x) {
-			sum += d;
+	@Override
+	public double Compute(int numVariables, int numConstraints, double[] x,
+			double[] con) {
+
+		// non-negative constraints for all variables
+		for (int i = 0; i < numVariables; ++i) {
+			con[i] = x[i];
 		}
-		return sum;
+
+		// sum <= 1 constraint
+		con[numVariables] = 1.0 - LassoCorrection.sum(x);
+
+		return computeObjectiveValue(x);
+	}
+
+	/**
+	 * Computes the value of the objective function given the solution x.
+	 * 
+	 * @param x
+	 * @return
+	 */
+	public double computeObjectiveValue(double[] x) {
+		// convert x to SimpleMatrix
+		SimpleMatrix smX = new SimpleMatrix(similarityMatrix.numRows(), 1,
+				true, x);
+
+		// compute norm
+		return norm(similarityMatrix.mult(smX).minus(reads));
+	}
+
+	private double norm(final SimpleMatrix sm) {
+		// we assume that this is a vector
+		double n = 0.0;
+
+		for (int i = 0; i < sm.numRows(); ++i) {
+			n += sm.get(i, 0) * sm.get(i, 0);
+		}
+		return n;
 	}
 }

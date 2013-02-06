@@ -118,6 +118,8 @@ public class LassoCorrectionTest {
 		input.print();
 		output.print();
 
+		smMatrix.print();
+
 		for (int i = 0; i < input.numCols(); ++i) {
 			System.out.println("Test iteration: " + i);
 
@@ -137,6 +139,8 @@ public class LassoCorrectionTest {
 			// assertArrayEquals(currentOutput.getMatrix().getData(), corrected,
 			// EPSILON);
 
+			System.out.println("Start:    "
+					+ Arrays.toString(normalizedInput.getMatrix().getData()));
 			System.out.println("Result:   " + Arrays.toString(corrected));
 			System.out.println("Expected: "
 					+ Arrays.toString(currentOutput.getMatrix().getData()));
