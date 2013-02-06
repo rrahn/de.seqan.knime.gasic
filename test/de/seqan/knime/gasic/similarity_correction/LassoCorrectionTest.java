@@ -157,7 +157,7 @@ public class LassoCorrectionTest {
 			System.out.println("Our Obj:   " + ourObj);
 			System.out.println("Their Obj: " + theirObj);
 			System.out.println("Obj-Diff:  " + (ourObj - theirObj));
-
+			assertEquals(theirObj, ourObj, 0.0001);
 		}
 	}
 }

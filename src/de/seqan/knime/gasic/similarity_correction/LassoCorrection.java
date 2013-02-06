@@ -28,11 +28,12 @@
 package de.seqan.knime.gasic.similarity_correction;
 
 import java.util.Arrays;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.ejml.simple.SimpleMatrix;
 
 import com.cureos.numerics.Cobyla;
-import com.cureos.numerics.CobylaExitStatus;
 
 /**
  * Computes the corrected abundance matrix for a given similarity matrix and
@@ -46,19 +47,22 @@ public class LassoCorrection {
 	private static final double rhobeg = 1.0;
 	private static final double rhoend = 1.0e-10;
 	private final int iprint;
+	private final int nthreads;
+
 	private static final int maxfun = 10000;
 
 	private double[] minSolution;
 	private double minObjective;
 
 	public LassoCorrection() {
-		this(0);
+		this(0, 4);
 	}
 
-	public LassoCorrection(int iprint) {
+	public LassoCorrection(final int iprint, final int nthreads) {
 		minObjective = Double.POSITIVE_INFINITY;
 		minSolution = null;
 		this.iprint = iprint;
+		this.nthreads = nthreads;
 	}
 
 	/**
@@ -88,28 +92,27 @@ public class LassoCorrection {
 
 		double[][] initialValues = getInitialValues(numGenoms);
 
-		for (double[] initialValue : initialValues) {
-			// solve the lasso problem
-			CobylaObjective calcfc = new CobylaObjective(sm, reads);
+		ExecutorService executor = Executors.newFixedThreadPool(nthreads);
 
-			// do the actual optimization
-			CobylaExitStatus stat = Cobyla.FindMinimum(calcfc, numGenoms,
-					numConstraints, initialValue, rhobeg, rhoend, iprint,
-					maxfun);
+		for (final double[] initialValue : initialValues) {
+			executor.execute(new Runnable() {
 
-			switch (stat) {
-			case DivergingRoundingErrors:
-				System.err
-						.println("Cobyla exited with DivergingRoundingErrors");
-				break;
-			case MaxIterationsReached:
-				System.err.println("Cobyla exited with MaxIterationsReached");
-				break;
-			default:
-				break;
-			}
+				@Override
+				public void run() {
+					// solve the lasso problem
+					CobylaObjective calcfc = new CobylaObjective(sm, reads);
 
-			updateResult(calcfc, initialValue);
+					// do the actual optimization
+					Cobyla.FindMinimum(calcfc, numGenoms, numConstraints,
+							initialValue, rhobeg, rhoend, iprint, maxfun);
+					updateResult(calcfc, initialValue);
+				}
+			});
+		}
+
+		executor.shutdown();
+		// Wait until all threads are finish
+		while (!executor.isTerminated()) {
 		}
 
 		return minSolution;
