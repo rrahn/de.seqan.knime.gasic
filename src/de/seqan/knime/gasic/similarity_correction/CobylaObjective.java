@@ -59,7 +59,7 @@ public final class CobylaObjective implements Calcfc {
 		}
 
 		// sum <= 1 constraint
-		con[numVariables] = 1.0 - LassoCorrection.sum(x);
+		con[numVariables] = 1.0 - sum(x);
 
 		return computeObjectiveValue(x);
 	}
@@ -87,5 +87,13 @@ public final class CobylaObjective implements Calcfc {
 			n += sm.get(i, 0) * sm.get(i, 0);
 		}
 		return n;
+	}
+
+	private double sum(double[] x) {
+		double sum = 0.0;
+		for (double d : x) {
+			sum += d;
+		}
+		return sum;
 	}
 }

@@ -88,11 +88,4 @@ public class LassoCorrection {
 		return abbundanceValue;
 	}
 
-	static double sum(double[] x) {
-		double sum = 0.0;
-		for (double d : x) {
-			sum += d;
-		}
-		return sum;
-	}
 }
