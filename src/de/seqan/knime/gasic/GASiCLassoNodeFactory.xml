@@ -4,35 +4,20 @@
     <name>GASiCLasso</name>
     
     <shortDescription>
-        
+    	Read correction node for the GASiC approach. The node takes a normalized read count vector and a similarity and computes a corrected abbundance vector for the given specieses.
     </shortDescription>
     
     <fullDescription>
-        <intro>Insert long description here...</intro>
+        <intro>Read correction node for the GASiC approach. The node takes a normalized read count vector and a similarity and computes a corrected abbundance vector for the given specieses.</intro>
         
+		<option name="Number of Threads">The number of threads that should be used to optimize the correction values.</option>
+		<option name="short name of second option (like in the dialog)">description of second option</option>
         
-        <option name="short name of first option (like in the dialog)">description of first option</option>
-        <option name="short name of second option (like in the dialog)">description of second option</option>
-        <!-- possibly more options that can also be grouped by tabs -->
-        <!--
-        <tab name="Standard Options">
-            <option name="short name of first option (like in the dialog)">description of first option</option>
-            <option name="short name of second option (like in the dialog)">description of second option</option>
-        </tab>
-        <tab name="Advanced Options">
-            <option name="short name of first advanced option (like in the dialog)">description of first advanced option</option>
-        </tab>
-        -->
     </fullDescription>
     
     <ports>
-        <inPort index="0" name="In-Port name">Description of first input port...</inPort>
-        <!-- possibly more input ports here-->
-        <outPort index="0" name="Out-Port name">Description of first output port...</outPort>
-        <!-- possibly more output ports here-->
+        <inPort index="0" name="Normalized Read Counts">Read counts normalized by the total number of reads.</inPort>
+        <inPort index="1" name="Similarity Matrix">Similarity matrix for the different organisms.</inPort>
+        <outPort index="0" name="Corrected Abbundacen values">Corrected abbundance values.</outPort>
     </ports>    
-    <views>
-        <view index="0" name="name of first view">Description of first view...</view>
-        <!--view index="1" name="name of second view">Description of second view...</view-->
-    </views>
 </knimeNode>

@@ -75,12 +75,8 @@ public class LassoCorrection {
 	 *            Vector of read counts per species (normalized).
 	 * @return Estimated abundance of each species in the sample.
 	 */
-	public double[] similarityCorrection(double[][] similarity,
-			double[] normalizedReadAbundances) {
-
-		final SimpleMatrix sm = new SimpleMatrix(similarity);
-		final SimpleMatrix reads = new SimpleMatrix(sm.numRows(), 1, true,
-				normalizedReadAbundances);
+	public double[] similarityCorrection(final SimpleMatrix sm,
+			final SimpleMatrix reads) {
 
 		// compute total number of reads
 		final int numGenoms = reads.numRows();
@@ -116,6 +112,16 @@ public class LassoCorrection {
 		}
 
 		return minSolution;
+	}
+
+	public double[] similarityCorrection(double[][] similarity,
+			double[] normalizedReadAbundances) {
+
+		final SimpleMatrix sm = new SimpleMatrix(similarity);
+		final SimpleMatrix reads = new SimpleMatrix(sm.numRows(), 1, true,
+				normalizedReadAbundances);
+
+		return similarityCorrection(sm, reads);
 	}
 
 	private synchronized void updateResult(CobylaObjective cobylaObjective,
