@@ -31,8 +31,8 @@ import java.util.Arrays;
 
 import org.ejml.simple.SimpleMatrix;
 
-import com.cureos.numerics.Calcfc;
 import com.cureos.numerics.Cobyla;
+import com.cureos.numerics.CobylaExitStatus;
 
 /**
  * Computes the corrected abundance matrix for a given similarity matrix and
@@ -45,8 +45,21 @@ public class LassoCorrection {
 	// initial value taken from scipy version and GASiC source code
 	private static final double rhobeg = 1.0;
 	private static final double rhoend = 1.0e-10;
-	private static final int iprint = 1;
+	private final int iprint;
 	private static final int maxfun = 10000;
+
+	private double[] minSolution;
+	private double minObjective;
+
+	public LassoCorrection() {
+		this(0);
+	}
+
+	public LassoCorrection(int iprint) {
+		minObjective = Double.POSITIVE_INFINITY;
+		minSolution = null;
+		this.iprint = iprint;
+	}
 
 	/**
 	 * Calculate corrected abundances given a similarity matrix and observations
@@ -58,7 +71,7 @@ public class LassoCorrection {
 	 *            Vector of read counts per species (normalized).
 	 * @return Estimated abundance of each species in the sample.
 	 */
-	public static double[] similarityCorrection(double[][] similarity,
+	public double[] similarityCorrection(double[][] similarity,
 			double[] normalizedReadAbundances) {
 
 		final SimpleMatrix sm = new SimpleMatrix(similarity);
@@ -73,19 +86,80 @@ public class LassoCorrection {
 
 		// normalize reads by its total number
 
-		// solve the lasso problem
-		Calcfc calcfc = new CobylaObjective(sm, reads);
+		double[][] initialValues = getInitialValues(numGenoms);
 
-		// initial guess -> 0.5 for all
-		double[] abbundanceValue = new double[numGenoms];
-		double startParameter = 1 / numGenoms;
-		Arrays.fill(abbundanceValue, startParameter);
+		for (double[] initialValue : initialValues) {
+			// solve the lasso problem
+			CobylaObjective calcfc = new CobylaObjective(sm, reads);
 
-		// do the actual optimization
-		Cobyla.FindMinimum(calcfc, numGenoms, numConstraints, abbundanceValue,
-				rhobeg, rhoend, iprint, maxfun);
+			// do the actual optimization
+			CobylaExitStatus stat = Cobyla.FindMinimum(calcfc, numGenoms,
+					numConstraints, initialValue, rhobeg, rhoend, iprint,
+					maxfun);
 
-		return abbundanceValue;
+			switch (stat) {
+			case DivergingRoundingErrors:
+				System.err
+						.println("Cobyla exited with DivergingRoundingErrors");
+				break;
+			case MaxIterationsReached:
+				System.err.println("Cobyla exited with MaxIterationsReached");
+				break;
+			default:
+				break;
+			}
+
+			updateResult(calcfc, initialValue);
+		}
+
+		return minSolution;
 	}
 
+	private synchronized void updateResult(CobylaObjective cobylaObjective,
+			double[] currentSolution) {
+		double currentObjective = cobylaObjective
+				.computeObjectiveValue(currentSolution);
+		if (currentObjective < minObjective) {
+			minObjective = currentObjective;
+			minSolution = currentSolution;
+		}
+	}
+
+	private double[][] getInitialValues(final int numGenoms) {
+		int possibleEquals = (int) Math.floor((1 / numGenoms) / 0.1);
+
+		double[][] initialValues = new double[(3 * numGenoms) + 1
+				+ possibleEquals][];
+
+		double lowStart = 0.1 / (numGenoms - 1);
+		for (int i = 0; i < numGenoms; ++i) {
+			initialValues[i] = new double[numGenoms];
+			Arrays.fill(initialValues[i], lowStart);
+			initialValues[i][i] = 0.9;
+		}
+
+		lowStart = 0.2 / (numGenoms - 1);
+		for (int i = 0; i < numGenoms; ++i) {
+			initialValues[numGenoms + i] = new double[numGenoms];
+			Arrays.fill(initialValues[numGenoms + i], lowStart);
+			initialValues[numGenoms + i][i] = 0.8;
+		}
+
+		for (int i = 0; i < numGenoms; ++i) {
+			initialValues[(2 * numGenoms) + i] = new double[numGenoms];
+			Arrays.fill(initialValues[(2 * numGenoms) + i], 0.01);
+			initialValues[(2 * numGenoms) + i][i] = 0.9;
+		}
+
+		for (int i = 0; i < possibleEquals; ++i) {
+			double startParameter = 1 / numGenoms - (i * 0.1);
+			initialValues[(3 * numGenoms) + i] = new double[numGenoms];
+			Arrays.fill(initialValues[(3 * numGenoms) + i], startParameter);
+		}
+
+		initialValues[initialValues.length - 1] = new double[numGenoms];
+		Arrays.fill(initialValues[initialValues.length - 1], 0.5);
+
+		return initialValues;
+	}
 }

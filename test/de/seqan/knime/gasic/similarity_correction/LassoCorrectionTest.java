@@ -132,17 +132,17 @@ public class LassoCorrectionTest {
 
 			// currentOutput.print();
 
-			double[] corrected = LassoCorrection.similarityCorrection(
+			double[] corrected = (new LassoCorrection()).similarityCorrection(
 					simpleMatrixTo2DArray(smMatrix),
 					normalizedInput.getMatrix().data);
 
 			// assertArrayEquals(currentOutput.getMatrix().getData(), corrected,
 			// EPSILON);
 
-			System.out.println("Start:    "
+			System.out.println("Start:     "
 					+ Arrays.toString(normalizedInput.getMatrix().getData()));
-			System.out.println("Result:   " + Arrays.toString(corrected));
-			System.out.println("Expected: "
+			System.out.println("Result:    " + Arrays.toString(corrected));
+			System.out.println("Expected:  "
 					+ Arrays.toString(currentOutput.getMatrix().getData()));
 			double[] diff = new double[corrected.length];
 			for (int d = 0; d < corrected.length; ++d) {
@@ -150,6 +150,14 @@ public class LassoCorrectionTest {
 						- currentOutput.getMatrix().getData()[d]);
 			}
 			System.out.println("Diff:     " + Arrays.toString(diff));
+			double ourObj = (new CobylaObjective(smMatrix, normalizedInput))
+					.computeObjectiveValue(corrected);
+			double theirObj = (new CobylaObjective(smMatrix, normalizedInput))
+					.computeObjectiveValue(currentOutput.getMatrix().getData());
+			System.out.println("Our Obj:   " + ourObj);
+			System.out.println("Their Obj: " + theirObj);
+			System.out.println("Obj-Diff:  " + (ourObj - theirObj));
+
 		}
 	}
 }
