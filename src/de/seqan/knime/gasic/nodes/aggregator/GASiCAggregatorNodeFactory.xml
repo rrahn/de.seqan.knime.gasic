@@ -9,7 +9,8 @@
     
     <fullDescription>
         <intro>Aggregates the read information into a single column with one line for each species containing the corresponding read count.</intro>
-    </fullDescription>
+        <option name="normalize">Determines if the aggregator node should produce raw or normalized (by the number of reads) counts.</option>
+    </fullDescription> 
     
     <ports>
         <inPort index="0" name="GASiC read mappings">Description of first input port...</inPort>

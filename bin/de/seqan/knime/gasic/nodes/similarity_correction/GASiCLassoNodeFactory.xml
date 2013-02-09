@@ -4,15 +4,20 @@
     <name>GASiCLasso</name>
     
     <shortDescription>
-    	Read correction node for the GASiC approach. The node takes a normalized read count vector and a similarity and computes a corrected abbundance vector for the given specieses.
+    	Read correction node for the GASiC approach. The node takes a normalized read count vector and a similarity matrix for the genomes and computes a corrected abbundance vector for the given specieses.
     </shortDescription>
     
     <fullDescription>
         <intro>Read correction node for the GASiC approach. The node takes a normalized read count vector and a similarity and computes a corrected abbundance vector for the given specieses.</intro>
         
-		<option name="Number of Threads">The number of threads that should be used to optimize the correction values.</option>
-		<option name="short name of second option (like in the dialog)">description of second option</option>
-        
+        <tab name="Cobyla Options" >
+	        <option name="Rho Begin">Initial Variables Change.</option>
+	        <option name="Rho End">Convergence criteria.</option>
+	        <option name="Max. Iterations">Maximal number of iterations for the optimization.</option>
+        </tab>
+        <tab name="Mutlithreading Options" >
+			<option name="Number of Threads">The number of threads that should be used to optimize the correction values.</option>
+        </tab>
     </fullDescription>
     
     <ports>
