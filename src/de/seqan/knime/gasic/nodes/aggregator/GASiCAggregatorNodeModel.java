@@ -1,3 +1,30 @@
+/**
+ * Copyright (c) 2006-2013, Knut Reinert, Freie Universitaet Berlin
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the Freie Universitaet Berlin nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package de.seqan.knime.gasic.nodes.aggregator;
 
 import java.io.File;
@@ -11,6 +38,7 @@ import org.knime.core.data.DataRow;
 import org.knime.core.data.DataTableSpec;
 import org.knime.core.data.def.BooleanCell;
 import org.knime.core.data.def.DefaultRow;
+import org.knime.core.data.def.DoubleCell;
 import org.knime.core.data.def.IntCell;
 import org.knime.core.data.def.StringCell;
 import org.knime.core.node.BufferedDataContainer;
@@ -23,6 +51,7 @@ import org.knime.core.node.NodeLogger;
 import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
+import org.knime.core.node.defaultnodesettings.SettingsModelBoolean;
 
 /**
  * This is the model implementation of GASiCAggregator. Aggregates the read
@@ -32,6 +61,12 @@ import org.knime.core.node.NodeSettingsWO;
  * @author Stephan Aiche
  */
 public class GASiCAggregatorNodeModel extends NodeModel {
+
+	static String CFG_NORMALIZE = "do_normalize";
+	static boolean DEFAULT_NORMALIZE = true;
+
+	private SettingsModelBoolean m_normalize = new SettingsModelBoolean(
+			CFG_NORMALIZE, DEFAULT_NORMALIZE);
 
 	// the logger instance
 	@SuppressWarnings("unused")
@@ -61,6 +96,8 @@ public class GASiCAggregatorNodeModel extends NodeModel {
 		BufferedDataTable in = inData[0];
 
 		int[] counts = new int[in.getDataTableSpec().getNumColumns()];
+		double[] normalizedCounts = new double[in.getDataTableSpec()
+				.getNumColumns()];
 		int i = 0;
 		for (DataRow row : in) {
 			// we know which cells are boolean
@@ -74,10 +111,27 @@ public class GASiCAggregatorNodeModel extends NodeModel {
 					+ i);
 		}
 
+		// normalize (if requested) by the number of reads/rows
+		if (m_normalize.getBooleanValue()) {
+			for (int c = 0; c < in.getDataTableSpec().getNumColumns(); ++c) {
+				if (in.getDataTableSpec().getColumnSpec(c).getType() == BooleanCell.TYPE) {
+					normalizedCounts[c] = ((double) counts[c])
+							/ ((double) in.getRowCount());
+				}
+			}
+		}
+
 		for (int c = 0; c < in.getDataTableSpec().getNumColumns(); ++c) {
 			if (in.getDataTableSpec().getColumnSpec(c).getType() == BooleanCell.TYPE) {
-				DataRow row = new DefaultRow(in.getDataTableSpec()
-						.getColumnSpec(c).getName(), new IntCell(counts[c]));
+				DataRow row;
+				if (m_normalize.getBooleanValue()) {
+					row = new DefaultRow(in.getDataTableSpec().getColumnSpec(c)
+							.getName(), new DoubleCell(normalizedCounts[c]));
+
+				} else {
+					row = new DefaultRow(in.getDataTableSpec().getColumnSpec(c)
+							.getName(), new IntCell(counts[c]));
+				}
 				container.addRowToTable(row);
 			}
 		}
@@ -125,8 +179,14 @@ public class GASiCAggregatorNodeModel extends NodeModel {
 	 */
 	private DataTableSpec createDataTableSpec() {
 		DataColumnSpec[] allColSpecs = new DataColumnSpec[1];
-		allColSpecs[0] = new DataColumnSpecCreator("Count", IntCell.TYPE)
-				.createSpec();
+		if (m_normalize.getBooleanValue()) {
+			allColSpecs[0] = new DataColumnSpecCreator("Normalized count",
+					DoubleCell.TYPE).createSpec();
+		} else {
+			allColSpecs[0] = new DataColumnSpecCreator("Count", IntCell.TYPE)
+					.createSpec();
+
+		}
 		DataTableSpec outputSpec = new DataTableSpec(allColSpecs);
 		return outputSpec;
 	}
@@ -136,6 +196,7 @@ public class GASiCAggregatorNodeModel extends NodeModel {
 	 */
 	@Override
 	protected void saveSettingsTo(final NodeSettingsWO settings) {
+		m_normalize.saveSettingsTo(settings);
 	}
 
 	/**
@@ -144,6 +205,7 @@ public class GASiCAggregatorNodeModel extends NodeModel {
 	@Override
 	protected void loadValidatedSettingsFrom(final NodeSettingsRO settings)
 			throws InvalidSettingsException {
+		m_normalize.loadSettingsFrom(settings);
 	}
 
 	/**
@@ -152,6 +214,7 @@ public class GASiCAggregatorNodeModel extends NodeModel {
 	@Override
 	protected void validateSettings(final NodeSettingsRO settings)
 			throws InvalidSettingsException {
+		m_normalize.validateSettings(settings);
 	}
 
 	/**
@@ -161,14 +224,6 @@ public class GASiCAggregatorNodeModel extends NodeModel {
 	protected void loadInternals(final File internDir,
 			final ExecutionMonitor exec) throws IOException,
 			CanceledExecutionException {
-
-		// TODO load internal data.
-		// Everything handed to output ports is loaded automatically (data
-		// returned by the execute method, models loaded in loadModelContent,
-		// and user settings set through loadSettingsFrom - is all taken care
-		// of). Load here only the other internals that need to be restored
-		// (e.g. data used by the views).
-
 	}
 
 	/**
@@ -178,14 +233,6 @@ public class GASiCAggregatorNodeModel extends NodeModel {
 	protected void saveInternals(final File internDir,
 			final ExecutionMonitor exec) throws IOException,
 			CanceledExecutionException {
-
-		// TODO save internal models.
-		// Everything written to output ports is saved automatically (data
-		// returned by the execute method, models saved in the saveModelContent,
-		// and user settings saved through saveSettingsTo - is all taken care
-		// of). Save here only the other internals that need to be preserved
-		// (e.g. data used by the views).
-
 	}
 
 }

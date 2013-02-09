@@ -27,59 +27,21 @@
  */
 package de.seqan.knime.gasic.nodes.aggregator;
 
-import org.knime.core.node.NodeDialogPane;
-import org.knime.core.node.NodeFactory;
-import org.knime.core.node.NodeView;
+import org.knime.core.node.defaultnodesettings.DefaultNodeSettingsPane;
+import org.knime.core.node.defaultnodesettings.DialogComponentBoolean;
+import org.knime.core.node.defaultnodesettings.SettingsModelBoolean;
 
 /**
- * <code>NodeFactory</code> for the "GASiCAggregator" Node. Aggregates the read
- * information into a single column with one line for each species containing
- * the corresponding read count.
+ * Dialog for the Aggregator node, exposing the options.
  * 
- * @author Stephan Aiche
+ * @author aiche
  */
-public class GASiCAggregatorNodeFactory extends
-		NodeFactory<GASiCAggregatorNodeModel> {
+public class GASiCAggregatorNodeDialog extends DefaultNodeSettingsPane {
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public GASiCAggregatorNodeModel createNodeModel() {
-		return new GASiCAggregatorNodeModel();
+	protected GASiCAggregatorNodeDialog() {
+		super();
+		addDialogComponent(new DialogComponentBoolean(new SettingsModelBoolean(
+				GASiCAggregatorNodeModel.CFG_NORMALIZE,
+				GASiCAggregatorNodeModel.DEFAULT_NORMALIZE), "Normalize:"));
 	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public int getNrNodeViews() {
-		return 0;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public NodeView<GASiCAggregatorNodeModel> createNodeView(
-			final int viewIndex, final GASiCAggregatorNodeModel nodeModel) {
-		return null;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public boolean hasDialog() {
-		return true;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public NodeDialogPane createNodeDialogPane() {
-		return new GASiCAggregatorNodeDialog();
-	}
-
 }
