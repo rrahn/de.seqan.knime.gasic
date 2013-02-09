@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE knimeNode PUBLIC "-//UNIKN//DTD KNIME Node 2.0//EN" "http://www.knime.org/Node.dtd">
+<knimeNode icon="./default.png" type="Manipulator">
+    <name>GASiCLasso</name>
+    
+    <shortDescription>
+    	Read correction node for the GASiC approach. The node takes a normalized read count vector and a similarity and computes a corrected abbundance vector for the given specieses.
+    </shortDescription>
+    
+    <fullDescription>
+        <intro>Read correction node for the GASiC approach. The node takes a normalized read count vector and a similarity and computes a corrected abbundance vector for the given specieses.</intro>
+        
+		<option name="Number of Threads">The number of threads that should be used to optimize the correction values.</option>
+		<option name="short name of second option (like in the dialog)">description of second option</option>
+        
+    </fullDescription>
+    
+    <ports>
+        <inPort index="0" name="Normalized Read Counts">Read counts normalized by the total number of reads.</inPort>
+        <inPort index="1" name="Similarity Matrix">Similarity matrix for the different organisms.</inPort>
+        <outPort index="0" name="Corrected Abbundacen values">Corrected abbundance values.</outPort>
+    </ports>    
+</knimeNode>

@@ -43,26 +43,29 @@ import com.cureos.numerics.Cobyla;
  */
 public class LassoCorrection {
 
-	// initial value taken from scipy version and GASiC source code
-	private static final double rhobeg = 1.0;
-	private static final double rhoend = 1.0e-10;
+	private final double rhobeg;
+	private final double rhoend;
 	private final int iprint;
 	private final int nthreads;
 
-	private static final int maxfun = 10000;
+	private final int maxfun;
 
 	private double[] minSolution;
 	private double minObjective;
 
 	public LassoCorrection() {
-		this(0, 4);
+		this(0, 4, 1.0, 1.0e-10, 10000);
 	}
 
-	public LassoCorrection(final int iprint, final int nthreads) {
+	public LassoCorrection(final int iprint, final int nthreads,
+			final double rhobeg, final double rhoend, final int maxfun) {
 		minObjective = Double.POSITIVE_INFINITY;
 		minSolution = null;
 		this.iprint = iprint;
 		this.nthreads = nthreads;
+		this.rhobeg = rhobeg;
+		this.rhoend = rhoend;
+		this.maxfun = maxfun;
 	}
 
 	/**
@@ -171,4 +174,5 @@ public class LassoCorrection {
 
 		return initialValues;
 	}
+
 }

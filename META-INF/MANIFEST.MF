@@ -8,6 +8,7 @@ Bundle-Vendor: Stephan Aiche
 Require-Bundle: org.knime.base;bundle-version="2.7.0",
  org.knime.workbench.core;bundle-version="2.7.0",
  org.knime.workbench.repository;bundle-version="2.7.0",
+ org.knime.core.data.uritype;bundle-version="[2.7.0,3.0.0)",
  com.cureos.numerics.jcobyla;bundle-version="1.0.0",
  org.junit
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
