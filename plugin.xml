@@ -12,5 +12,7 @@
   	<node category-path="/community/SeqAn/GASiC" factory-class="de.seqan.knime.gasic.nodes.similarity_correction.GASiCLassoNodeFactory" id="de.seqan.knime.gasic.nodes.similarity_correction.GASiCLassoNodeFactory"/>
 	<node category-path="/community/SeqAn/GASiC" factory-class="de.seqan.knime.gasic.nodes.reader.GASiCReaderNodeFactory" id="de.seqan.knime.gasic.nodes.reader.GASiCReaderNodeFactory"/>
 	<node category-path="/community/SeqAn/GASiC" factory-class="de.seqan.knime.gasic.nodes.aggregator.GASiCAggregatorNodeFactory" id="de.seqan.knime.gasic.nodes.aggregator.GASiCAggregatorNodeFactory"/>
-  </extension>
+ 	<node category-path="/community/SeqAn/GASiC" factory-class="de.seqan.knime.gasic.nodes.listreader.GASiCListReaderNodeFactory" id="de.seqan.knime.gasic.nodes.listreader.GASiCListReaderNodeFactory"/>
+	<node category-path="/community/SeqAn/GASiC" factory-class="de.seqan.knime.gasic.nodes.listaggregator.GASiCListAggregatorNodeFactory" id="de.seqan.knime.gasic.nodes.listaggregator.GASiCListAggregatorNodeFactory"/>
+</extension>
 </plugin>

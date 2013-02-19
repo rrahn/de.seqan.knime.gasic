@@ -42,6 +42,6 @@ public class GASiCAggregatorNodeDialog extends DefaultNodeSettingsPane {
 		super();
 		addDialogComponent(new DialogComponentBoolean(new SettingsModelBoolean(
 				GASiCAggregatorNodeModel.CFG_NORMALIZE,
-				GASiCAggregatorNodeModel.DEFAULT_NORMALIZE), "Normalize:"));
+				GASiCAggregatorNodeModel.DEFAULT_NORMALIZE), "Normalize"));
 	}
 }
