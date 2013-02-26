@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.knime.core.data.DataCell;
 import org.knime.core.data.DataColumnSpec;
 import org.knime.core.data.DataColumnSpecCreator;
 import org.knime.core.data.DataRow;
@@ -51,7 +52,6 @@ import org.knime.core.node.NodeLogger;
 import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
-import org.knime.core.node.defaultnodesettings.SettingsModelBoolean;
 
 /**
  * This is the model implementation of GASiCAggregator. Aggregates the read
@@ -61,12 +61,6 @@ import org.knime.core.node.defaultnodesettings.SettingsModelBoolean;
  * @author Stephan Aiche
  */
 public class GASiCAggregatorNodeModel extends NodeModel {
-
-	static String CFG_NORMALIZE = "do_normalize";
-	static boolean DEFAULT_NORMALIZE = true;
-
-	private SettingsModelBoolean m_normalize = new SettingsModelBoolean(
-			CFG_NORMALIZE, DEFAULT_NORMALIZE);
 
 	// the logger instance
 	@SuppressWarnings("unused")
@@ -112,26 +106,20 @@ public class GASiCAggregatorNodeModel extends NodeModel {
 		}
 
 		// normalize (if requested) by the number of reads/rows
-		if (m_normalize.getBooleanValue()) {
-			for (int c = 0; c < in.getDataTableSpec().getNumColumns(); ++c) {
-				if (in.getDataTableSpec().getColumnSpec(c).getType() == BooleanCell.TYPE) {
-					normalizedCounts[c] = ((double) counts[c])
-							/ ((double) in.getRowCount());
-				}
+		for (int c = 0; c < in.getDataTableSpec().getNumColumns(); ++c) {
+			if (in.getDataTableSpec().getColumnSpec(c).getType() == BooleanCell.TYPE) {
+				normalizedCounts[c] = ((double) counts[c])
+						/ ((double) in.getRowCount());
 			}
 		}
 
 		for (int c = 0; c < in.getDataTableSpec().getNumColumns(); ++c) {
 			if (in.getDataTableSpec().getColumnSpec(c).getType() == BooleanCell.TYPE) {
-				DataRow row;
-				if (m_normalize.getBooleanValue()) {
-					row = new DefaultRow(in.getDataTableSpec().getColumnSpec(c)
-							.getName(), new DoubleCell(normalizedCounts[c]));
-
-				} else {
-					row = new DefaultRow(in.getDataTableSpec().getColumnSpec(c)
-							.getName(), new IntCell(counts[c]));
-				}
+				DataCell[] cells = new DataCell[2];
+				cells[0] = new IntCell(counts[c]);
+				cells[1] = new DoubleCell(normalizedCounts[c]);
+				DataRow row = new DefaultRow(in.getDataTableSpec()
+						.getColumnSpec(c).getName(), cells);
 				container.addRowToTable(row);
 			}
 		}
@@ -178,15 +166,12 @@ public class GASiCAggregatorNodeModel extends NodeModel {
 	 * @return
 	 */
 	private DataTableSpec createDataTableSpec() {
-		DataColumnSpec[] allColSpecs = new DataColumnSpec[1];
-		if (m_normalize.getBooleanValue()) {
-			allColSpecs[0] = new DataColumnSpecCreator("Normalized count",
-					DoubleCell.TYPE).createSpec();
-		} else {
-			allColSpecs[0] = new DataColumnSpecCreator("Count", IntCell.TYPE)
-					.createSpec();
+		DataColumnSpec[] allColSpecs = new DataColumnSpec[2];
+		allColSpecs[0] = new DataColumnSpecCreator("Count", IntCell.TYPE)
+				.createSpec();
+		allColSpecs[1] = new DataColumnSpecCreator("Normalized count",
+				DoubleCell.TYPE).createSpec();
 
-		}
 		DataTableSpec outputSpec = new DataTableSpec(allColSpecs);
 		return outputSpec;
 	}
@@ -196,7 +181,6 @@ public class GASiCAggregatorNodeModel extends NodeModel {
 	 */
 	@Override
 	protected void saveSettingsTo(final NodeSettingsWO settings) {
-		m_normalize.saveSettingsTo(settings);
 	}
 
 	/**
@@ -205,7 +189,6 @@ public class GASiCAggregatorNodeModel extends NodeModel {
 	@Override
 	protected void loadValidatedSettingsFrom(final NodeSettingsRO settings)
 			throws InvalidSettingsException {
-		m_normalize.loadSettingsFrom(settings);
 	}
 
 	/**
@@ -214,7 +197,6 @@ public class GASiCAggregatorNodeModel extends NodeModel {
 	@Override
 	protected void validateSettings(final NodeSettingsRO settings)
 			throws InvalidSettingsException {
-		m_normalize.validateSettings(settings);
 	}
 
 	/**

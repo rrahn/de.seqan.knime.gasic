@@ -40,6 +40,7 @@ import org.knime.core.data.DataTableSpec;
 import org.knime.core.data.RowKey;
 import org.knime.core.data.def.DefaultRow;
 import org.knime.core.data.def.DoubleCell;
+import org.knime.core.data.def.IntCell;
 import org.knime.core.node.BufferedDataContainer;
 import org.knime.core.node.BufferedDataTable;
 import org.knime.core.node.CanceledExecutionException;
@@ -113,8 +114,14 @@ public class GASiCLassoNodeModel extends NodeModel {
 		// transfer input table 1 to matrix
 		SimpleMatrix reads = new SimpleMatrix(inData[0].getRowCount(), 1);
 		int r = 0;
+		int totalReadCount = 0;
+		int[] mapped_reads = new int[inData[0].getRowCount()];
+		String[] names = new String[inData[0].getRowCount()];
 		for (DataRow dataRow : inData[0]) {
-			reads.set(r++, 0, ((DoubleCell) dataRow.getCell(0)).getRealValue());
+			totalReadCount += ((IntCell) dataRow.getCell(0)).getIntValue();
+			reads.set(r, 0, ((DoubleCell) dataRow.getCell(1)).getDoubleValue());
+			mapped_reads[r] = ((IntCell) dataRow.getCell(0)).getIntValue();
+			names[r++] = dataRow.getKey().getString();
 		}
 
 		// transfer input table 2 to matrix
@@ -149,9 +156,11 @@ public class GASiCLassoNodeModel extends NodeModel {
 				.createDataContainer(createOutputSpec());
 
 		for (int i = 0; i < abbundances.length; ++i) {
-			RowKey key = new RowKey("Row " + i);
-			DataCell[] cells = new DataCell[1];
+			RowKey key = new RowKey(names[i]);
+			DataCell[] cells = new DataCell[3];
 			cells[0] = new DoubleCell(abbundances[i]);
+			cells[1] = new DoubleCell(mapped_reads[i]);
+			cells[2] = new DoubleCell(abbundances[i] * totalReadCount);
 			DataRow row = new DefaultRow(key, cells);
 			container.addRowToTable(row);
 
@@ -180,13 +189,16 @@ public class GASiCLassoNodeModel extends NodeModel {
 	protected DataTableSpec[] configure(final DataTableSpec[] inSpecs)
 			throws InvalidSettingsException {
 
-		// ensure that inSpecs[0] has only one column
-		if (inSpecs[0].getNumColumns() != 1) {
+		// index of the raw counts
+		if (inSpecs[0].getNumColumns() != 2) {
 			throw new InvalidSettingsException(
-					"We currently support only a single abundance vector as input.");
-		} else if (inSpecs[0].getColumnSpec(0).getType() != DoubleCell.TYPE) {
+					"At least one column with the raw- and one with the normalized counts is required.");
+		} else if (inSpecs[0].getColumnSpec(0).getType() != IntCell.TYPE) {
 			throw new InvalidSettingsException(
-					"The input column needs to be a double column.");
+					"The 1st input column needs to be a int column containing the raw counts.");
+		} else if (inSpecs[0].getColumnSpec(1).getType() != DoubleCell.TYPE) {
+			throw new InvalidSettingsException(
+					"The 2nd input column needs to be a double column containing the normalized counts.");
 		}
 
 		// check if all inSpecs[1] columns are double
@@ -202,8 +214,12 @@ public class GASiCLassoNodeModel extends NodeModel {
 
 	private DataTableSpec createOutputSpec() {
 
-		DataColumnSpec[] allColSpecs = new DataColumnSpec[1];
-		allColSpecs[0] = new DataColumnSpecCreator("Abbundance",
+		DataColumnSpec[] allColSpecs = new DataColumnSpec[3];
+		allColSpecs[0] = new DataColumnSpecCreator("abbundance",
+				DoubleCell.TYPE).createSpec();
+		allColSpecs[1] = new DataColumnSpecCreator("mapped reads",
+				DoubleCell.TYPE).createSpec();
+		allColSpecs[2] = new DataColumnSpecCreator("estimated reads",
 				DoubleCell.TYPE).createSpec();
 
 		return new DataTableSpec(allColSpecs);

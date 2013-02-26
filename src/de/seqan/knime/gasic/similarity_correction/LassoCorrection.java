@@ -72,9 +72,9 @@ public class LassoCorrection {
 	 * Calculate corrected abundances given a similarity matrix and observations
 	 * using optimization.
 	 * 
-	 * @param similarity
+	 * @param sm
 	 *            Matrix with pairwise similarities between species.
-	 * @param normalizedReadAbundances
+	 * @param reads
 	 *            Vector of read counts per species (normalized).
 	 * @return Estimated abundance of each species in the sample.
 	 */
@@ -172,6 +172,14 @@ public class LassoCorrection {
 		initialValues[initialValues.length - 1] = new double[numGenoms];
 		Arrays.fill(initialValues[initialValues.length - 1], 0.5);
 
+		return initialValues;
+	}
+
+	private double[][] getOriginalInitialValues(final int numGenoms) {
+		double[][] initialValues = new double[1][];
+		initialValues[initialValues.length - 1] = new double[numGenoms];
+		double lowStart = 0.1 / (numGenoms - 1);
+		Arrays.fill(initialValues[initialValues.length - 1], lowStart);
 		return initialValues;
 	}
 

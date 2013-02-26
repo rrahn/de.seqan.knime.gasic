@@ -89,12 +89,9 @@ public class GASiCListAggregatorNodeModel extends NodeModel {
 		for (int i = 0; i < counts.length; ++i) {
 			DoubleCell[] cells = new DoubleCell[counts.length];
 			for (int j = 0; j < counts.length; ++j) {
-				if (j != i) {
-					cells[j] = new DoubleCell((double) counts[i][j]
-							/ (double) counts[i][i]);
-				}
+				cells[j] = new DoubleCell((double) counts[i][j]
+						/ (double) counts[i][i]);
 			}
-			cells[i] = new DoubleCell(1.0);
 			RowKey rowKey = new RowKey(outputSpec.getColumnNames()[i]);
 			DataRow row = new DefaultRow(rowKey, cells);
 			container.addRowToTable(row);

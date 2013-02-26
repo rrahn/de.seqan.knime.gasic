@@ -71,7 +71,7 @@ public class GASiCAggregatorNodeFactory extends
 	 */
 	@Override
 	public boolean hasDialog() {
-		return true;
+		return false;
 	}
 
 	/**
@@ -79,7 +79,7 @@ public class GASiCAggregatorNodeFactory extends
 	 */
 	@Override
 	public NodeDialogPane createNodeDialogPane() {
-		return new GASiCAggregatorNodeDialog();
+		return null;
 	}
 
 }
