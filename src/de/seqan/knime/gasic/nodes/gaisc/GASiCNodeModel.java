@@ -86,8 +86,8 @@ public class GASiCNodeModel extends NodeModel {
 			CFG_NUM_BOOSTRAP, DEFAULT_NUM_BOOSTRAP);
 
 	// //////////
-	static final double DEFAULT_TEST_LEVEL = 0.1;
-	static final String CFG_TEST_LEVEL = "num_boostrap";
+	static final double DEFAULT_TEST_LEVEL = 0.01;
+	static final String CFG_TEST_LEVEL = "test_level";
 
 	private final SettingsModelDouble m_test_level = new SettingsModelDouble(
 			CFG_TEST_LEVEL, DEFAULT_TEST_LEVEL);
@@ -139,7 +139,10 @@ public class GASiCNodeModel extends NodeModel {
 
 			correct[i] = lc.similarityCorrection(sm, reads);
 			fail[i] = new double[numGenomes];
-			Arrays.fill(fail[i], 0.0);
+			for (int f = 0; f < numGenomes; ++f) {
+				fail[i][f] = (correct[i][f] < m_test_level.getDoubleValue() ? 1
+						: 0);
+			}
 
 			exec.setProgress((double) i / m_num_boostrap.getIntValue());
 			exec.checkCanceled();
@@ -457,6 +460,12 @@ public class GASiCNodeModel extends NodeModel {
 	 */
 	@Override
 	protected void saveSettingsTo(final NodeSettingsWO settings) {
+		m_max_iter.saveSettingsTo(settings);
+		m_num_boostrap.saveSettingsTo(settings);
+		m_num_threads.saveSettingsTo(settings);
+		m_rhobeg.saveSettingsTo(settings);
+		m_rhoend.saveSettingsTo(settings);
+		m_test_level.saveSettingsTo(settings);
 	}
 
 	/**
@@ -465,6 +474,12 @@ public class GASiCNodeModel extends NodeModel {
 	@Override
 	protected void loadValidatedSettingsFrom(final NodeSettingsRO settings)
 			throws InvalidSettingsException {
+		m_max_iter.loadSettingsFrom(settings);
+		m_num_boostrap.loadSettingsFrom(settings);
+		m_num_threads.loadSettingsFrom(settings);
+		m_rhobeg.loadSettingsFrom(settings);
+		m_rhoend.loadSettingsFrom(settings);
+		m_test_level.loadSettingsFrom(settings);
 	}
 
 	/**
@@ -473,6 +488,12 @@ public class GASiCNodeModel extends NodeModel {
 	@Override
 	protected void validateSettings(final NodeSettingsRO settings)
 			throws InvalidSettingsException {
+		m_max_iter.validateSettings(settings);
+		m_num_boostrap.validateSettings(settings);
+		m_num_threads.validateSettings(settings);
+		m_rhobeg.validateSettings(settings);
+		m_rhoend.validateSettings(settings);
+		m_test_level.validateSettings(settings);
 	}
 
 	/**
