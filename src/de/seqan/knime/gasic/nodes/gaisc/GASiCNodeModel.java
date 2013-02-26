@@ -4,6 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Random;
+import java.util.Set;
+import java.util.TreeSet;
 
 import org.ejml.simple.SimpleMatrix;
 import org.knime.core.data.DataCell;
@@ -27,6 +30,7 @@ import org.knime.core.node.NodeLogger;
 import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
+import org.knime.core.node.defaultnodesettings.SettingsModelDouble;
 import org.knime.core.node.defaultnodesettings.SettingsModelDoubleBounded;
 import org.knime.core.node.defaultnodesettings.SettingsModelInteger;
 import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded;
@@ -39,6 +43,11 @@ import de.seqan.knime.gasic.similarity_correction.LassoCorrection;
  * @author Stephan Aiche
  */
 public class GASiCNodeModel extends NodeModel {
+	/**
+	 * The portion of the total reads that should be used in each bootstrap
+	 * iteration.
+	 */
+	private static double SUBSET_QUANT = 0.6;
 
 	static String CFG_RHO_BEG = "rho_beg";
 	static double DEFAULT_RHO_BEG = 1.0;
@@ -70,11 +79,18 @@ public class GASiCNodeModel extends NodeModel {
 					.availableProcessors());
 
 	// //////////
-	private static final int DEFAULT_NUM_BOOSTRAP = 10;
-	private static final String CFG_NUM_BOOSTRAP = "num_boostrap";
+	static final int DEFAULT_NUM_BOOSTRAP = 5;
+	static final String CFG_NUM_BOOSTRAP = "num_boostrap";
 
 	private final SettingsModelInteger m_num_boostrap = new SettingsModelInteger(
 			CFG_NUM_BOOSTRAP, DEFAULT_NUM_BOOSTRAP);
+
+	// //////////
+	static final double DEFAULT_TEST_LEVEL = 0.1;
+	static final String CFG_TEST_LEVEL = "num_boostrap";
+
+	private final SettingsModelDouble m_test_level = new SettingsModelDouble(
+			CFG_TEST_LEVEL, DEFAULT_TEST_LEVEL);
 
 	// the logger instance
 	private static final NodeLogger logger = NodeLogger
@@ -116,12 +132,16 @@ public class GASiCNodeModel extends NodeModel {
 					numReads, numGenomes);
 			SimpleMatrix sm = sampleSimilarityMatrix(inData[1], numSimReads,
 					numGenomes);
+			// sm.transpose();
+
+			logger.info("Similartiy matrix in iteration " + i + ": "
+					+ sm.toString());
 
 			correct[i] = lc.similarityCorrection(sm, reads);
 			fail[i] = new double[numGenomes];
 			Arrays.fill(fail[i], 0.0);
 
-			exec.setProgress((double) i / (double) m_num_boostrap.getIntValue());
+			exec.setProgress((double) i / m_num_boostrap.getIntValue());
 			exec.checkCanceled();
 		}
 
@@ -134,6 +154,8 @@ public class GASiCNodeModel extends NodeModel {
 		double[] avg_correct = mean(correct);
 		double[] avg_fails = mean(fail);
 		double[] var_correct = var(correct);
+
+		logger.info("Correction values: " + Arrays.toString(avg_correct));
 
 		for (int i = 0; i < numGenomes; ++i) {
 			RowKey key = new RowKey("Row " + i);
@@ -246,7 +268,7 @@ public class GASiCNodeModel extends NodeModel {
 			final BufferedDataTable source, final int numReads,
 			final int numGenomes) {
 
-		int[] counts = getMappedReads(source, numGenomes);
+		int[] counts = getMappedReads(source, numGenomes, true);
 
 		SimpleMatrix normalizedReads = new SimpleMatrix(numGenomes, 1);
 
@@ -258,17 +280,30 @@ public class GASiCNodeModel extends NodeModel {
 	}
 
 	public int[] getMappedReads(final BufferedDataTable source,
-			final int numGenomes) {
+			final int numGenomes, boolean bootstrap) {
 		int[] boolCols = getMappingCols(source.getDataTableSpec(), numGenomes);
 		int[] counts = new int[numGenomes];
 		Arrays.fill(counts, 0);
+
+		Set<Integer> rndSet = getRandomSet(source.getRowCount(),
+				(int) (source.getRowCount() * SUBSET_QUANT));
+
+		int r = 0;
 		for (DataRow row : source) {
-			for (int i = 0; i < numGenomes; ++i) {
-				counts[i] += ((BooleanCell) row.getCell(boolCols[i]))
-						.getIntValue();
+			if (!bootstrap || rndSet.contains(r)) {
+				for (int i = 0; i < numGenomes; ++i) {
+					counts[i] += ((BooleanCell) row.getCell(boolCols[i]))
+							.getIntValue();
+				}
 			}
+			++r;
 		}
 		return counts;
+	}
+
+	public int[] getMappedReads(final BufferedDataTable source,
+			final int numGenomes) {
+		return getMappedReads(source, numGenomes, false);
 	}
 
 	private int[] getMappingCols(DataTableSpec dataTableSpec,
@@ -280,8 +315,25 @@ public class GASiCNodeModel extends NodeModel {
 				boolCols[c++] = i;
 			}
 		}
-
 		return boolCols;
+	}
+
+	/**
+	 * 
+	 * @param N
+	 * @param M
+	 * @return
+	 */
+	private Set<Integer> getRandomSet(final int N, final int M) {
+		logger.debug(String.format(
+				"Generating random subset of size M=%d in the interval [0,%d)",
+				M, N));
+		Set<Integer> rndSet = new TreeSet<Integer>();
+		Random rndGen = new Random();
+		while (rndSet.size() < M) {
+			rndSet.add(rndGen.nextInt(N));
+		}
+		return rndSet;
 	}
 
 	/**
@@ -295,31 +347,7 @@ public class GASiCNodeModel extends NodeModel {
 			final int numReads, final int numGenomes) throws Exception {
 		int[] boolCols = getMappingCols(source.getDataTableSpec(), numGenomes);
 
-		Iterator<DataRow> rowIterator = source.iterator();
-		String currentGenome = "";
-		int[][] counts = new int[numGenomes][numGenomes];
-		int currentGenomeIdx = -1;
-		while (currentGenomeIdx < numGenomes) {
-			if (!rowIterator.hasNext())
-				break;
-
-			DataRow row = rowIterator.next();
-			if (!((StringCell) row.getCell(0)).getStringValue().equals(
-					currentGenome)) {
-				++currentGenomeIdx;
-				currentGenome = ((StringCell) row.getCell(0)).getStringValue();
-			}
-
-			if (currentGenomeIdx >= numGenomes) {
-				throw new Exception(
-						"Invalid input data: The input data contains more genomes in its rows then in its columns.");
-			}
-
-			for (int g = 0; g < numGenomes; ++g) {
-				counts[currentGenomeIdx][g] += ((BooleanCell) row
-						.getCell(boolCols[g])).getIntValue();
-			}
-		}
+		int[][] counts = getSimilartiyCountMatrix(source, numGenomes, boolCols);
 
 		// normalize
 		SimpleMatrix sm = new SimpleMatrix(numGenomes, numGenomes);
@@ -331,6 +359,64 @@ public class GASiCNodeModel extends NodeModel {
 		}
 
 		return sm;
+	}
+
+	public int[][] getSimilartiyCountMatrix(final BufferedDataTable source,
+			final int numGenomes, int[] boolCols) throws Exception {
+		Iterator<DataRow> rowIterator = source.iterator();
+		String currentGenome = "";
+		int[][] counts = new int[numGenomes][numGenomes];
+		int currentGenomeIdx = -1;
+
+		int numReadsPerGenome = source.getRowCount() / numGenomes;
+		Set<Integer> subSet = new TreeSet<Integer>();
+		int r = 0;
+		Iterator<Integer> selectedRowIt = subSet.iterator();
+		int nextRow = -1;
+
+		while (currentGenomeIdx < numGenomes) {
+			if (!rowIterator.hasNext())
+				break;
+
+			DataRow row = rowIterator.next();
+
+			// we have a new genome
+			if (!((StringCell) row.getCell(0)).getStringValue().equals(
+					currentGenome)) {
+				++currentGenomeIdx;
+				currentGenome = ((StringCell) row.getCell(0)).getStringValue();
+
+				// reset the sampling variables
+				r = 0;
+				subSet = getRandomSet(numReadsPerGenome,
+						(int) (numReadsPerGenome * SUBSET_QUANT));
+				selectedRowIt = subSet.iterator();
+				nextRow = selectedRowIt.next();
+			}
+
+			if (currentGenomeIdx >= numGenomes) {
+				throw new Exception(
+						"Invalid input data: The input data contains more genomes in its rows then in its columns.");
+			}
+
+			if (r == nextRow) {
+				// logger.info(String.format(
+				// "Adding row %d of genome %d to similarity matrix",
+				// nextRow, currentGenomeIdx));
+				for (int g = 0; g < numGenomes; ++g) {
+					counts[currentGenomeIdx][g] += ((BooleanCell) row
+							.getCell(boolCols[g])).getIntValue();
+				}
+
+				if (selectedRowIt.hasNext()) {
+					nextRow = selectedRowIt.next();
+				} else {
+					nextRow = -1;
+				}
+			}
+			++r;
+		}
+		return counts;
 	}
 
 	private double[] mean(double[][] input) {
