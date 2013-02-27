@@ -2,11 +2,11 @@ package de.seqan.knime.gasic.nodes.gaisc;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
+import java.util.Collections;
+import java.util.List;
 import java.util.Random;
-import java.util.Set;
-import java.util.TreeSet;
 
 import org.ejml.simple.SimpleMatrix;
 import org.knime.core.data.DataCell;
@@ -43,11 +43,6 @@ import de.seqan.knime.gasic.similarity_correction.LassoCorrection;
  * @author Stephan Aiche
  */
 public class GASiCNodeModel extends NodeModel {
-	/**
-	 * The portion of the total reads that should be used in each bootstrap
-	 * iteration.
-	 */
-	private static double SUBSET_QUANT = 0.6;
 
 	static String CFG_RHO_BEG = "rho_beg";
 	static double DEFAULT_RHO_BEG = 1.0;
@@ -162,7 +157,7 @@ public class GASiCNodeModel extends NodeModel {
 
 		for (int i = 0; i < numGenomes; ++i) {
 			RowKey key = new RowKey("Row " + i);
-			DataCell[] cells = new DataCell[5];
+			DataCell[] cells = new DataCell[6];
 			// name
 			cells[0] = new StringCell(names[i]);
 			// mapped reads
@@ -173,6 +168,8 @@ public class GASiCNodeModel extends NodeModel {
 			cells[3] = new DoubleCell(var_correct[i] * numReads);
 			// pval
 			cells[4] = new DoubleCell(avg_fails[i]);
+			// abbundance
+			cells[5] = new DoubleCell(avg_correct[i]);
 
 			DataRow row = new DefaultRow(key, cells);
 			container.addRowToTable(row);
@@ -246,7 +243,7 @@ public class GASiCNodeModel extends NodeModel {
 	private DataTableSpec createOutputSpec() {
 		// {name}\t{mapped}\t{corr}\t{error}\t{pval}
 
-		DataColumnSpec[] allColSpecs = new DataColumnSpec[5];
+		DataColumnSpec[] allColSpecs = new DataColumnSpec[6];
 		allColSpecs[0] = new DataColumnSpecCreator("name", StringCell.TYPE)
 				.createSpec();
 		allColSpecs[1] = new DataColumnSpecCreator("mapped reads", IntCell.TYPE)
@@ -257,6 +254,8 @@ public class GASiCNodeModel extends NodeModel {
 				.createSpec();
 		allColSpecs[4] = new DataColumnSpecCreator("pval", DoubleCell.TYPE)
 				.createSpec();
+		allColSpecs[5] = new DataColumnSpecCreator("abbundance",
+				DoubleCell.TYPE).createSpec();
 
 		return new DataTableSpec(allColSpecs);
 	}
@@ -288,20 +287,28 @@ public class GASiCNodeModel extends NodeModel {
 		int[] counts = new int[numGenomes];
 		Arrays.fill(counts, 0);
 
-		Set<Integer> rndSet = getRandomSet(source.getRowCount(),
-				(int) (source.getRowCount() * SUBSET_QUANT));
-
-		int r = 0;
+		List<Integer> sampleSubset = getRandomSampleList(source.getRowCount());
+		int s = 0; // current sample
+		int r = 0; // current row in the data set
 		for (DataRow row : source) {
-			if (!bootstrap || rndSet.contains(r)) {
-				for (int i = 0; i < numGenomes; ++i) {
-					counts[i] += ((BooleanCell) row.getCell(boolCols[i]))
-							.getIntValue();
+			if (!bootstrap) {
+				addRowToCountVector(numGenomes, boolCols, counts, row);
+			} else {
+				while (s < sampleSubset.size() && r == sampleSubset.get(s)) {
+					addRowToCountVector(numGenomes, boolCols, counts, row);
+					++s;
 				}
 			}
 			++r;
 		}
 		return counts;
+	}
+
+	public void addRowToCountVector(final int numGenomes, int[] boolCols,
+			int[] counts, DataRow row) {
+		for (int i = 0; i < numGenomes; ++i) {
+			counts[i] += ((BooleanCell) row.getCell(boolCols[i])).getIntValue();
+		}
 	}
 
 	public int[] getMappedReads(final BufferedDataTable source,
@@ -322,21 +329,28 @@ public class GASiCNodeModel extends NodeModel {
 	}
 
 	/**
+	 * Creates a new, random, sorted list of size N with elements in the
+	 * interval [0, N).
 	 * 
 	 * @param N
-	 * @param M
-	 * @return
+	 *            Size of the generated list and the domain of the generated
+	 *            numbers.
+	 * @return A new, random, sorted list of size N.
 	 */
-	private Set<Integer> getRandomSet(final int N, final int M) {
+	private List<Integer> getRandomSampleList(final int N) {
 		logger.debug(String.format(
-				"Generating random subset of size M=%d in the interval [0,%d)",
-				M, N));
-		Set<Integer> rndSet = new TreeSet<Integer>();
+				"Generating random set of size N=%d in the interval [0,%d)", N,
+				N));
+		List<Integer> rndList = new ArrayList<Integer>();
 		Random rndGen = new Random();
-		while (rndSet.size() < M) {
-			rndSet.add(rndGen.nextInt(N));
+		for (int i = 0; i < N; ++i) {
+			rndList.add(rndGen.nextInt(N));
 		}
-		return rndSet;
+
+		// sort the list for easier iteration
+		Collections.sort(rndList);
+
+		return rndList;
 	}
 
 	/**
@@ -366,59 +380,55 @@ public class GASiCNodeModel extends NodeModel {
 
 	public int[][] getSimilartiyCountMatrix(final BufferedDataTable source,
 			final int numGenomes, int[] boolCols) throws Exception {
-		Iterator<DataRow> rowIterator = source.iterator();
 		String currentGenome = "";
 		int[][] counts = new int[numGenomes][numGenomes];
 		int currentGenomeIdx = -1;
 
 		int numReadsPerGenome = source.getRowCount() / numGenomes;
-		Set<Integer> subSet = new TreeSet<Integer>();
-		int r = 0;
-		Iterator<Integer> selectedRowIt = subSet.iterator();
-		int nextRow = -1;
+		List<Integer> bootstrapSample = new ArrayList<Integer>();
+		int r = 0; // current row in the data set
+		int s = 0; // current element in the sample
 
-		while (currentGenomeIdx < numGenomes) {
-			if (!rowIterator.hasNext())
-				break;
+		for (DataRow row : source) {
 
-			DataRow row = rowIterator.next();
+			// reset counters etc as we have a new genome
+			if (!currentGenome.equals(((StringCell) row.getCell(0))
+					.getStringValue())) {
+				// .. check if the previous run got all the data
+				if (s != bootstrapSample.size()) {
+					throw new Exception(
+							"Bootstrap sampling of similarity matrix failed.");
+				}
 
-			// we have a new genome
-			if (!((StringCell) row.getCell(0)).getStringValue().equals(
-					currentGenome)) {
+				// .. the row selection
+				bootstrapSample = getRandomSampleList(numReadsPerGenome);
+				s = 0;
+				r = 0;
+
+				// .. the genome
 				++currentGenomeIdx;
 				currentGenome = ((StringCell) row.getCell(0)).getStringValue();
 
-				// reset the sampling variables
-				r = 0;
-				subSet = getRandomSet(numReadsPerGenome,
-						(int) (numReadsPerGenome * SUBSET_QUANT));
-				selectedRowIt = subSet.iterator();
-				nextRow = selectedRowIt.next();
+				if (currentGenomeIdx >= numGenomes) {
+					throw new Exception(
+							"Invalid input data: The input data contains more genomes in its rows then in its columns.");
+				}
 			}
 
-			if (currentGenomeIdx >= numGenomes) {
-				throw new Exception(
-						"Invalid input data: The input data contains more genomes in its rows then in its columns.");
-			}
-
-			if (r == nextRow) {
-				// logger.info(String.format(
-				// "Adding row %d of genome %d to similarity matrix",
-				// nextRow, currentGenomeIdx));
+			// add the current row 0/1/multiple times depending on how often it
+			// is in the bootstrapSample
+			while (s < bootstrapSample.size() && r == bootstrapSample.get(s)) {
 				for (int g = 0; g < numGenomes; ++g) {
 					counts[currentGenomeIdx][g] += ((BooleanCell) row
 							.getCell(boolCols[g])).getIntValue();
 				}
-
-				if (selectedRowIt.hasNext()) {
-					nextRow = selectedRowIt.next();
-				} else {
-					nextRow = -1;
-				}
+				++s;
 			}
+
+			// advance row counter
 			++r;
 		}
+
 		return counts;
 	}
 
