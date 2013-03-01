@@ -1,4 +1,4 @@
-package de.seqan.knime.gasic.nodes.gaisc;
+package de.seqan.knime.gasic.nodes.gasic;
 
 import java.io.File;
 import java.io.IOException;

@@ -175,12 +175,4 @@ public class LassoCorrection {
 		return initialValues;
 	}
 
-	private double[][] getOriginalInitialValues(final int numGenoms) {
-		double[][] initialValues = new double[1][];
-		initialValues[initialValues.length - 1] = new double[numGenoms];
-		double lowStart = 0.1 / (numGenoms - 1);
-		Arrays.fill(initialValues[initialValues.length - 1], lowStart);
-		return initialValues;
-	}
-
 }

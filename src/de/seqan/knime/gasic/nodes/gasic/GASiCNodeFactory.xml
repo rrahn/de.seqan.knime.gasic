@@ -1,0 +1,35 @@
+
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE knimeNode PUBLIC "-//UNIKN//DTD KNIME Node 2.0//EN" "http://www.knime.org/Node.dtd">
+<knimeNode icon="./default.png" type="Source">
+    <name>GASiC</name>
+    
+    <shortDescription>
+        Implements the GASiC approach.
+    </shortDescription>
+    
+    <fullDescription>
+        <intro>Insert long description here...</intro>
+        
+        <tab name="Cobyla Options" >
+	        <option name="Rho Begin">Initial Variables Change.</option>
+	        <option name="Rho End">Convergence criteria.</option>
+	        <option name="Max. Iterations">Maximal number of iterations for the optimization.</option>
+        </tab>
+        <tab name="Bootstrapping Options" >
+        	<option name="Number of iterations">Number of bootstrap samples.</option>
+        </tab>
+        <tab name="p-value computation" >
+        	<option name="test level">Abundance from species are treated as not present. Needed for p-value computation.</option>
+        </tab>
+        <tab name="Mutlithreading Options" >
+			<option name="Number of Threads">The number of threads that should be used to optimize the correction values.</option>
+        </tab>
+    </fullDescription>
+    
+    <ports>
+        <inPort index="0" name="Read mapping information">Table containing for each read the information to which genomes it maps.</inPort>
+        <inPort index="1" name="Simulated mapping information">Table containing for simulated reads from which genome they were simulated and to which genomes they map.</inPort>
+        <outPort index="0" name="Corrected Abbundacen values">Corrected abundance values.</outPort>
+    </ports>    
+</knimeNode>

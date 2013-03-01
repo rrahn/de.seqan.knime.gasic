@@ -1,4 +1,4 @@
-package de.seqan.knime.gasic.nodes.gaisc;
+package de.seqan.knime.gasic.nodes.gasic;
 
 import org.knime.core.node.NodeDialogPane;
 import org.knime.core.node.NodeFactory;
