@@ -9,7 +9,6 @@
      </category>
   </extension>
   <extension point="org.knime.workbench.repository.nodes">
-  	<node category-path="/community/SeqAn/GASiC" factory-class="de.seqan.knime.gasic.nodes.similarity_correction.GASiCLassoNodeFactory" id="de.seqan.knime.gasic.nodes.similarity_correction.GASiCLassoNodeFactory"/>
 	<node category-path="/community/SeqAn/GASiC" factory-class="de.seqan.knime.gasic.nodes.reader.GASiCReaderNodeFactory" id="de.seqan.knime.gasic.nodes.reader.GASiCReaderNodeFactory"/>
  	<node category-path="/community/SeqAn/GASiC" factory-class="de.seqan.knime.gasic.nodes.listreader.GASiCListReaderNodeFactory" id="de.seqan.knime.gasic.nodes.listreader.GASiCListReaderNodeFactory"/>
 	<node category-path="/community/SeqAn/GASiC" factory-class="de.seqan.knime.gasic.nodes.gasic.GASiCNodeFactory" id="de.seqan.knime.gasic.nodes.gaisc.GASiCNodeFactory"/>
