@@ -211,7 +211,6 @@ public class GASiCReaderNodeModel extends NodeModel {
 
 		columnsSpecs[0] = new DataColumnSpecCreator("Read-Id", StringCell.TYPE)
 				.createSpec();
-
 		int i = 1;
 		for (String genome : genomes) {
 			columnsSpecs[i++] = new DataColumnSpecCreator(genome,
