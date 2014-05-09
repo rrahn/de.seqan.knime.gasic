@@ -38,126 +38,125 @@ import org.junit.Test;
 
 /**
  * @author aiche
- * 
  */
 public class LassoCorrectionTest {
 
-	private static final double EPSILON = 0.001;
+    private static final double EPSILON = 0.001;
 
-	private double[][] simpleMatrixTo2DArray(SimpleMatrix sm) {
-		double[][] data = new double[sm.numRows()][sm.numCols()];
+    private double[][] simpleMatrixTo2DArray(SimpleMatrix sm) {
+        double[][] data = new double[sm.numRows()][sm.numCols()];
 
-		for (int i = 0; i < sm.numRows(); ++i) {
-			for (int j = 0; j < sm.numCols(); ++j) {
-				data[i][j] = sm.get(i, j);
-			}
-		}
-		return data;
-	}
+        for (int i = 0; i < sm.numRows(); ++i) {
+            for (int j = 0; j < sm.numCols(); ++j) {
+                data[i][j] = sm.get(i, j);
+            }
+        }
+        return data;
+    }
 
-	@Test
-	public void testSimpleMatrixTo2DArray() {
-		double[][] data = { { 1, 2, 3 }, { 4, 5, 6 }, { 7, 8, 9 } };
-		SimpleMatrix sm = new SimpleMatrix(data);
+    @Test
+    public void testSimpleMatrixTo2DArray() {
+        double[][] data = { { 1, 2, 3 }, { 4, 5, 6 }, { 7, 8, 9 } };
+        SimpleMatrix sm = new SimpleMatrix(data);
 
-		assertEquals(1, sm.get(0, 0), EPSILON);
-		assertEquals(2, sm.get(0, 1), EPSILON);
-		assertEquals(3, sm.get(0, 2), EPSILON);
+        assertEquals(1, sm.get(0, 0), EPSILON);
+        assertEquals(2, sm.get(0, 1), EPSILON);
+        assertEquals(3, sm.get(0, 2), EPSILON);
 
-		assertEquals(4, sm.get(1, 0), EPSILON);
-		assertEquals(5, sm.get(1, 1), EPSILON);
-		assertEquals(6, sm.get(1, 2), EPSILON);
+        assertEquals(4, sm.get(1, 0), EPSILON);
+        assertEquals(5, sm.get(1, 1), EPSILON);
+        assertEquals(6, sm.get(1, 2), EPSILON);
 
-		assertEquals(7, sm.get(2, 0), EPSILON);
-		assertEquals(8, sm.get(2, 1), EPSILON);
-		assertEquals(9, sm.get(2, 2), EPSILON);
+        assertEquals(7, sm.get(2, 0), EPSILON);
+        assertEquals(8, sm.get(2, 1), EPSILON);
+        assertEquals(9, sm.get(2, 2), EPSILON);
 
-		double[][] res = simpleMatrixTo2DArray(sm);
+        double[][] res = simpleMatrixTo2DArray(sm);
 
-		assertEquals(1, res[0][0], EPSILON);
-		assertEquals(2, res[0][1], EPSILON);
-		assertEquals(3, res[0][2], EPSILON);
+        assertEquals(1, res[0][0], EPSILON);
+        assertEquals(2, res[0][1], EPSILON);
+        assertEquals(3, res[0][2], EPSILON);
 
-		assertEquals(4, res[1][0], EPSILON);
-		assertEquals(5, res[1][1], EPSILON);
-		assertEquals(6, res[1][2], EPSILON);
+        assertEquals(4, res[1][0], EPSILON);
+        assertEquals(5, res[1][1], EPSILON);
+        assertEquals(6, res[1][2], EPSILON);
 
-		assertEquals(7, res[2][0], EPSILON);
-		assertEquals(8, res[2][1], EPSILON);
-		assertEquals(9, res[2][2], EPSILON);
+        assertEquals(7, res[2][0], EPSILON);
+        assertEquals(8, res[2][1], EPSILON);
+        assertEquals(9, res[2][2], EPSILON);
 
-	}
+    }
 
-	/**
-	 * Test method for
-	 * {@link de.seqan.knime.gasic.similarity_correction.LassoCorrection#similarityCorrection(double[][], double[])}
-	 * .
-	 * 
-	 * @throws IOException
-	 *             Thrown if loading of matrices fails.
-	 * @throws URISyntaxException
-	 *             Thrown if converting the URI to the test data fails.
-	 */
-	@Test
-	public void testSimilarityCorrection() throws IOException,
-			URISyntaxException {
+    /**
+     * Test method for
+     * {@link de.seqan.knime.gasic.similarity_correction.LassoCorrection#similarityCorrection(double[][], double[])}
+     * .
+     * 
+     * @throws IOException
+     *             Thrown if loading of matrices fails.
+     * @throws URISyntaxException
+     *             Thrown if converting the URI to the test data fails.
+     */
+    @Test
+    public void testSimilarityCorrection() throws IOException,
+            URISyntaxException {
 
-		final int numReads = 100000;
+        final int numReads = 100000;
 
-		String inputFilename = LassoCorrectionTest.class
-				.getResource("input.txt").toURI().getPath();
-		String smMatrixFilename = LassoCorrectionTest.class
-				.getResource("matrix.txt").toURI().getPath();
-		String outputFilename = LassoCorrectionTest.class
-				.getResource("output.txt").toURI().getPath();
+        String inputFilename = LassoCorrectionTest.class
+                .getResource("input.txt").toURI().getPath();
+        String smMatrixFilename = LassoCorrectionTest.class
+                .getResource("matrix.txt").toURI().getPath();
+        String outputFilename = LassoCorrectionTest.class
+                .getResource("output.txt").toURI().getPath();
 
-		SimpleMatrix input = SimpleMatrix.loadCSV(inputFilename);
-		SimpleMatrix smMatrix = SimpleMatrix.loadCSV(smMatrixFilename);
-		SimpleMatrix output = SimpleMatrix.loadCSV(outputFilename);
+        SimpleMatrix input = SimpleMatrix.loadCSV(inputFilename);
+        SimpleMatrix smMatrix = SimpleMatrix.loadCSV(smMatrixFilename);
+        SimpleMatrix output = SimpleMatrix.loadCSV(outputFilename);
 
-		input.print();
-		output.print();
+        input.print();
+        output.print();
 
-		smMatrix.print();
+        smMatrix.print();
 
-		for (int i = 0; i < input.numCols(); ++i) {
-			System.out.println("Test iteration: " + i);
+        for (int i = 0; i < input.numCols(); ++i) {
+            System.out.println("Test iteration: " + i);
 
-			SimpleMatrix currentInput = input.extractVector(false, i);
-			SimpleMatrix currentOutput = output.extractVector(false, i);
+            SimpleMatrix currentInput = input.extractVector(false, i);
+            SimpleMatrix currentOutput = output.extractVector(false, i);
 
-			// currentInput.print();
-			SimpleMatrix normalizedInput = currentInput.divide(numReads);
-			// normalizedInput.print();
+            // currentInput.print();
+            SimpleMatrix normalizedInput = currentInput.divide(numReads);
+            // normalizedInput.print();
 
-			// currentOutput.print();
+            // currentOutput.print();
 
-			double[] corrected = (new LassoCorrection()).similarityCorrection(
-					simpleMatrixTo2DArray(smMatrix),
-					normalizedInput.getMatrix().data);
+            double[] corrected = (new LassoCorrection()).similarityCorrection(
+                    simpleMatrixTo2DArray(smMatrix),
+                    normalizedInput.getMatrix().data);
 
-			// assertArrayEquals(currentOutput.getMatrix().getData(), corrected,
-			// EPSILON);
+            // assertArrayEquals(currentOutput.getMatrix().getData(), corrected,
+            // EPSILON);
 
-			System.out.println("Start:     "
-					+ Arrays.toString(normalizedInput.getMatrix().getData()));
-			System.out.println("Result:    " + Arrays.toString(corrected));
-			System.out.println("Expected:  "
-					+ Arrays.toString(currentOutput.getMatrix().getData()));
-			double[] diff = new double[corrected.length];
-			for (int d = 0; d < corrected.length; ++d) {
-				diff[d] = Math.abs(corrected[d]
-						- currentOutput.getMatrix().getData()[d]);
-			}
-			System.out.println("Diff:     " + Arrays.toString(diff));
-			double ourObj = (new CobylaObjective(smMatrix, normalizedInput))
-					.computeObjectiveValue(corrected);
-			double theirObj = (new CobylaObjective(smMatrix, normalizedInput))
-					.computeObjectiveValue(currentOutput.getMatrix().getData());
-			System.out.println("Our Obj:   " + ourObj);
-			System.out.println("Their Obj: " + theirObj);
-			System.out.println("Obj-Diff:  " + (ourObj - theirObj));
-			assertEquals(theirObj, ourObj, 0.0001);
-		}
-	}
+            System.out.println("Start:     "
+                    + Arrays.toString(normalizedInput.getMatrix().getData()));
+            System.out.println("Result:    " + Arrays.toString(corrected));
+            System.out.println("Expected:  "
+                    + Arrays.toString(currentOutput.getMatrix().getData()));
+            double[] diff = new double[corrected.length];
+            for (int d = 0; d < corrected.length; ++d) {
+                diff[d] = Math.abs(corrected[d]
+                        - currentOutput.getMatrix().getData()[d]);
+            }
+            System.out.println("Diff:     " + Arrays.toString(diff));
+            double ourObj = (new CobylaObjective(smMatrix, normalizedInput))
+                    .computeObjectiveValue(corrected);
+            double theirObj = (new CobylaObjective(smMatrix, normalizedInput))
+                    .computeObjectiveValue(currentOutput.getMatrix().getData());
+            System.out.println("Our Obj:   " + ourObj);
+            System.out.println("Their Obj: " + theirObj);
+            System.out.println("Obj-Diff:  " + (ourObj - theirObj));
+            assertEquals(theirObj, ourObj, 0.0001);
+        }
+    }
 }
