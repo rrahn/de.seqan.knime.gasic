@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Testing for GASiC Code
+Bundle-SymbolicName: de.seqan.knime.gasic.testing;singleton:=true
+Bundle-Version: 1.0.0.qualifier
+Bundle-Vendor: Freie Universitaet Berlin
+Fragment-Host: de.seqan.knime.gasic
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Require-Bundle: org.knime.testing;bundle-version="[2.7.0,3.0.0)",
+ org.junit;bundle-version="[4.8.2,5.0.0)"
