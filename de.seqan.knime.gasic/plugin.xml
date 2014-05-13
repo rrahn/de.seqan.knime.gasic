@@ -7,8 +7,15 @@
      <category description="/community/SeqAn/Metagenomics" icon="icons/category.png" path="/community/SeqAn" name="Metagenomics" level-id="Metagenomics"/>
   </extension>
   <extension point="org.knime.workbench.repository.nodes">
-	<node category-path="/community/SeqAn/Metagenomics" factory-class="de.seqan.knime.gasic.nodes.reader.GASiCReaderNodeFactory" id="de.seqan.knime.gasic.nodes.reader.GASiCReaderNodeFactory" />
+    <node category-path="/community/SeqAn/Metagenomics" factory-class="de.seqan.knime.gasic.nodes.reader.GASiCReaderNodeFactory" id="de.seqan.knime.gasic.nodes.reader.GASiCReaderNodeFactory" />
     <node category-path="/community/SeqAn/Metagenomics" factory-class="de.seqan.knime.gasic.nodes.listreader.GASiCListReaderNodeFactory" id="de.seqan.knime.gasic.nodes.listreader.GASiCListReaderNodeFactory"/>
-	<node category-path="/community/SeqAn/Metagenomics" factory-class="de.seqan.knime.gasic.nodes.gasic.GASiCNodeFactory" id="de.seqan.knime.gasic.nodes.gaisc.GASiCNodeFactory"/>
-</extension>
+    <node category-path="/community/SeqAn/Metagenomics" factory-class="de.seqan.knime.gasic.nodes.gasic.GASiCNodeFactory" id="de.seqan.knime.gasic.nodes.gaisc.GASiCNodeFactory"/>
+  </extension>
+  <extension point="org.knime.product.splashExtension">
+    <splashExtension
+          icon="icons/splash/gasic_48.png"
+          icon24="icons/splash/gasic_24.png"
+          icon32="icons/splash/gasic_32.png"
+          id="de.seqan.gasic.icons.splashIcon"/>
+  </extension>
 </plugin>
