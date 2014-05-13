@@ -4,3 +4,6 @@
 *.jar
 *.war
 *.ear
+
+# we want jars in the respective lib folders
+!*/lib/*.jar
